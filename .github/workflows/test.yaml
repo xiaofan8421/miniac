@@ -1,0 +1,89 @@
+name: 'test'
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  ALICLOUD_ACCESS_KEY: ${{ secrets.ALICLOUD_ACCESS_KEY }}
+  ALICLOUD_SECRET_KEY: ${{ secrets.ALICLOUD_SECRET_KEY }}
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  GOOGLE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+  GOOGLE_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        env_vars:
+          - { dir: 'aws'}
+          - { dir: 'ali'}
+          - { dir: 'azure'}
+          - { dir: 'gcp'}
+    concurrency:
+      group: terraform-apply-${{ matrix.env_vars.dir }}
+    if: always()
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh/terraform
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/terraform/rsa
+        md5sum ~/.ssh/terraform/rsa
+        echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/terraform/rsa.pub
+        md5sum ~/.ssh/terraform/rsa.pub
+        chmod 600 ~/.ssh/terraform/rsa
+        chmod 644 ~/.ssh/terraform/rsa.pub
+
+    - name: Set up TFLint
+      uses: terraform-linters/setup-tflint@v4
+      with:
+        tflint_version: latest
+
+    - name: Run TFLint
+      run: tflint --recursive
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Fmt
+      run: terraform -chdir=${{ matrix.env_vars.dir }} fmt -check
+      continue-on-error: true
+
+    - name: Terraform Init
+      run: |
+        terraform -chdir=${{ matrix.env_vars.dir }} init
+        terraform version
+
+    - name: Terraform Validate
+      run: terraform -chdir=${{ matrix.env_vars.dir }} validate
+
+    - name: Terraform Plan
+      run: terraform -chdir=${{ matrix.env_vars.dir }} plan
+
+    - name: Terraform Apply
+      run: terraform -chdir=${{ matrix.env_vars.dir }} apply -auto-approve
+
+    - name: Terraform Destroy
+      id: tf-destroy
+      if: always() || failure()
+      run: |
+        for i in {1..3}; do
+          echo "Attempt $i"
+          terraform -chdir=${{ matrix.env_vars.dir }} destroy -auto-approve && break || sleep 10
+        done

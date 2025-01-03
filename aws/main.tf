@@ -15,6 +15,7 @@ resource "aws_vpc" "example" {
 }
 
 resource "aws_subnet" "example" {
+  availability_zone       = var.zone
   vpc_id                  = aws_vpc.example.id
   cidr_block              = "172.16.1.0/24"
   map_public_ip_on_launch = true
@@ -83,8 +84,9 @@ resource "aws_network_interface" "example" {
 }
 
 resource "aws_instance" "example" {
-  ami           = var.image
-  instance_type = "t3.micro" # 2C1G
+  availability_zone = var.zone
+  ami               = var.image
+  instance_type     = "t3.micro" # 2C1G
 
   key_name = aws_key_pair.example.id
 
@@ -103,7 +105,7 @@ resource "aws_instance" "example" {
   connection {
     type        = "ssh"
     user        = var.ssh_user
-    private_key = file("${var.ssh_key_path}")
+    private_key = file(var.ssh_key_path)
     host        = self.public_ip
     timeout     = "3m"
   }

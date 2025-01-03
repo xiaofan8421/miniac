@@ -17,7 +17,7 @@ resource "alicloud_security_group" "group" {
 }
 
 resource "alicloud_key_pair" "my_key" {
-  public_key    = file("${var.ssh_key_path}.pub")
+  public_key = file("${var.ssh_key_path}.pub")
 }
 
 resource "alicloud_security_group_rule" "allow_ssh" {
@@ -58,13 +58,13 @@ resource "alicloud_instance" "example" {
 
   internet_charge_type       = "PayByTraffic"
   internet_max_bandwidth_out = "10"
-  security_groups            = ["${alicloud_security_group.group.id}"]
+  security_groups            = [alicloud_security_group.group.id]
   key_name                   = alicloud_key_pair.my_key.key_pair_name
 
   connection {
     type        = "ssh"
     user        = "root"
-    private_key = file("${var.ssh_key_path}")
+    private_key = file(var.ssh_key_path)
     host        = self.public_ip
     timeout     = "3m"
   }

@@ -70,7 +70,7 @@ resource "google_compute_instance" "example" {
   connection {
     type        = "ssh"
     user        = "tf"
-    private_key = file("${var.ssh_key_path}")
+    private_key = file(var.ssh_key_path)
     host        = self.network_interface[0].access_config[0].nat_ip
     timeout     = "3m"
   }

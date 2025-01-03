@@ -121,7 +121,7 @@ resource "azurerm_virtual_machine" "example" {
   connection {
     type        = "ssh"
     user        = "tf"
-    private_key = file("${var.ssh_key_path}")
+    private_key = file(var.ssh_key_path)
     host        = azurerm_public_ip.example.ip_address
     timeout     = "3m"
   }
