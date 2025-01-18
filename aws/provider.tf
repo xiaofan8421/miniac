@@ -12,8 +12,9 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "roy-tf-dev"
-    key    = "terraform/state"
-    region = "ap-east-1"
+    bucket       = "roy-tf-dev"
+    key          = "terraform/aws/state"
+    region       = "ap-east-1"
+    use_lockfile = true
   }
 }

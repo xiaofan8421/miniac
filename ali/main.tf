@@ -1,6 +1,3 @@
-provider "alicloud" {
-  region = var.region
-}
 
 resource "alicloud_vpc" "vpc" {
   cidr_block = "172.16.0.0/16"
