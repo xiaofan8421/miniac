@@ -1,6 +1,3 @@
-provider "aws" {
-  region = var.region
-}
 
 resource "aws_key_pair" "example" {
   public_key = file("${var.ssh_key_path}.pub")
@@ -100,6 +97,12 @@ resource "aws_instance" "example" {
   network_interface {
     network_interface_id = aws_network_interface.example.id
     device_index         = 0
+  }
+
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
   }
 
   connection {
