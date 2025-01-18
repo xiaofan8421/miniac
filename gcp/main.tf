@@ -1,6 +1,3 @@
-provider "google" {
-  region = var.region
-}
 
 resource "google_compute_network" "example" {
   name                    = "tf-test-vpc"
